@@ -13,7 +13,7 @@
 <a href="https://discord.gg/Bmbmn9Ms3S">BedrockCloud Discord</a>
 
 # Support
-**You can Support this project with <a href="https://www.patreon.com/bedrockcloud">Patron</a>**
+**You can Support this project with <a href="https://www.patreon.com/bedrockcloud">Patreon</a>**
 
 # Contributor(s)
 * <a href="https://github.com/WhitqFlorian">WhitqFlorian</a>
