@@ -186,14 +186,11 @@ class SimpleCommandMap implements CommandMap{
 			return false;
 		}
 
-		$target->timings->startTiming();
-
 		try{
 			$target->execute($sender, $sentCommandLabel, $args);
 		}catch(InvalidCommandSyntaxException $e){
 			$sender->sendMessage("Usage: ".$target->getUsage());
 		}finally{
-			$target->timings->stopTiming();
 		}
 
 		return true;
