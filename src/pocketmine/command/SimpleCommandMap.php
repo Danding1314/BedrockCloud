@@ -23,8 +23,6 @@ declare(strict_types=1);
 
 namespace pocketmine\command;
 
-use pocketmine\cloud\commands\CreateCommand;
-use pocketmine\command\defaults\TimingsCommand;
 use pocketmine\command\defaults\VanillaCommand;
 use pocketmine\command\defaults\VersionCommand;
 use pocketmine\command\utils\InvalidCommandSyntaxException;
@@ -57,7 +55,6 @@ class SimpleCommandMap implements CommandMap{
 
 	private function setDefaultCommands(){
 		$this->registerAll("pocketmine", [
-			new TimingsCommand("timings"),
 			new VersionCommand("version")
         ]);
 	}
