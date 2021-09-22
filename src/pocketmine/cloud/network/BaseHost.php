@@ -60,18 +60,6 @@ class BaseHost extends PacketHandler {
 							unset($this->clients[$key]);
 
 						}
-						if ($packet instanceof StartServerPacket) {
-							$this->handleStartServerPacket($address, $packet->requestId, $packet->template, $packet->count);
-						}
-						if ($packet instanceof StopServerPacket) {
-							$this->handleStopServerPacket($address, $packet->requestId, $packet->server);
-						}
-						if ($packet instanceof StopServerGroupPacket) {
-							$this->handleStopServerGroupPacket($address, $packet->requestId, $packet->template);
-						}
-                        if ($packet instanceof MessagePacket) {
-                            $this->handleSendMessage($packet->message);
-                        }
 						if ($packet instanceof RequestPacket && $packet->type == RequestPacket::TYPE_REQUEST) {
 							if ($packet instanceof LoginPacket) {
 								$this->logger->info("Received LoginPacket from {$address->getIp()}:{$address->getPort()}.");
@@ -81,20 +69,27 @@ class BaseHost extends PacketHandler {
 									$this->acceptConnection();
 									$this->logger->info("{$address->getIp()}:{$address->getPort()} was approved.");
 								} else {
-									#$this->disconnect($address, DisconnectPacket::REASON_WRONG_PASSWORD);
+									$this->disconnect($address, DisconnectPacket::REASON_WRONG_PASSWORD);
 									$this->logger->alert("{$address->getIp()}:{$address->getPort()} was denied, reason password is wrong.");
 								}
 							} else {
 								//FOR OTHER PACKETS, CHECK IF CLIENT IS AUTHENTICATED
-								/*if (in_array($address, $this->clients)) {
-									if($packet instanceof ListServersPacket){
-										$this->listServers($address, $packet->requestid, $packet->template);
-									}elseif($packet instanceof StartServerPacket){
-										$this->listServers($address, $packet->requestid, $packet->count, $packet->template);
-									}
+								if (in_array($address, $this->clients)) {
+                                    if ($packet instanceof StartServerPacket) {
+                                        $this->handleStartServerPacket($address, $packet->requestId, $packet->template, $packet->count);
+                                    }
+                                    if ($packet instanceof StopServerPacket) {
+                                        $this->handleStopServerPacket($address, $packet->requestId, $packet->server);
+                                    }
+                                    if ($packet instanceof StopServerGroupPacket) {
+                                        $this->handleStopServerGroupPacket($address, $packet->requestId, $packet->template);
+                                    }
+                                    if ($packet instanceof MessagePacket) {
+                                        $this->handleSendMessage($packet->message);
+                                    }
 								} else {
 									$this->cloud->getServer()->getLogger()->info("Got packet from unauthorized server. Ignoring...");
-								}*/
+								}
 							}
 						}
 					}
