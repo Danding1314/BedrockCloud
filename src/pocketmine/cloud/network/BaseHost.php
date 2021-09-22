@@ -39,64 +39,67 @@ class BaseHost extends PacketHandler {
         $cloud->getScheduler()->scheduleRepeatingTask(new ClosureTask(function (int $currentTick): void {$this->onTick($currentTick);}), 1);
     }
 
-    public function onTick(int $tick): void{
-		if (!$this->closed) {
-			$address = $this->address;
-			$len = 1;
-			while (!$len === false) {
-				$len = $this->socket->readPacket($buffer, $address->ip, $address->port);
-				if (!$len === false) {
-					$this->logger->warning("Received Packet.");
-					$packet = PacketPool::getPacket($buffer);
-					if (!is_null($packet)) {
-						$packet->decode();
-						if ($packet instanceof ConsoleTextPacket) {
-							$this->logger->info("§f[§b{$packet->sender}§f] §f{$packet->message}");
-						}
-						if ($packet instanceof DisconnectPacket) {
-							$this->logger->info("§f[§b{$packet->requestId}§f] §cHas disconnected due to §f{$packet->reason}");
+    public function onTick(int $tick): void
+    {
+        if (!$this->closed) {
+            $address = $this->address;
+            $len = 1;
+            while (!$len === false) {
+                $len = $this->socket->readPacket($buffer, $address->ip, $address->port);
+                if (!$len === false) {
+                    $this->logger->warning("Received Packet.");
+                    $packet = PacketPool::getPacket($buffer);
+                    if (!is_null($packet)) {
+                        $packet->decode();
+                        if ($packet instanceof DisconnectPacket) {
+                            $this->logger->info("§f[§b{$packet->requestId}§f] §cHas disconnected due to §f{$packet->reason}");
 
-							$key = array_search($packet->requestId, $this->clients);
-							unset($this->clients[$key]);
+                            $key = array_search($packet->requestId, $this->clients);
+                            unset($this->clients[$key]);
 
-						}
-						if ($packet instanceof RequestPacket && $packet->type == RequestPacket::TYPE_REQUEST) {
-							if ($packet instanceof LoginPacket) {
-								$this->logger->info("Received LoginPacket from {$address->getIp()}:{$address->getPort()}.");
-								//RECEIVED LOGIN PACKET: CHECK IF PASSWORD MATCHES
-								if ($packet->password == $this->password) {
-									$this->clients[$packet->requestid] = $address;
-									$this->acceptConnection();
-									$this->logger->info("{$address->getIp()}:{$address->getPort()} was approved.");
-								} else {
-									$this->disconnect($address, DisconnectPacket::REASON_WRONG_PASSWORD);
-									$this->logger->alert("{$address->getIp()}:{$address->getPort()} was denied, reason password is wrong.");
-								}
-							} else {
-								//FOR OTHER PACKETS, CHECK IF CLIENT IS AUTHENTICATED
-								if (in_array($address, $this->clients)) {
-                                    if ($packet instanceof StartServerPacket) {
-                                        $this->handleStartServerPacket($address, $packet->requestId, $packet->template, $packet->count);
+                        }
+                        if ($packet instanceof LoginPacket) {
+                            $this->logger->info("Received LoginPacket from {$address->getIp()}:{$address->getPort()}.");
+                            //RECEIVED LOGIN PACKET: CHECK IF PASSWORD MATCHES
+                            if ($packet->password == $this->password) {
+                                $this->clients[$packet->requestid] = $address;
+                                $this->acceptConnection();
+                                $this->logger->info("{$address->getIp()}:{$address->getPort()} was approved.");
+                            } else {
+                                $this->disconnect($address, DisconnectPacket::REASON_WRONG_PASSWORD);
+                                $this->logger->alert("{$address->getIp()}:{$address->getPort()} was denied, reason password is wrong.");
+                            }
+                        } else {
+                            //FOR OTHER PACKETS, CHECK IF CLIENT IS AUTHENTICATED
+                            if (in_array($address, $this->clients)) {
+                                if ($packet instanceof DataPacket) {
+                                    if ($packet instanceof RequestPacket) {
+                                        if ($packet->type == RequestPacket::TYPE_REQUEST) {
+                                            if ($packet instanceof StartServerPacket) {
+                                                $this->handleStartServerPacket($address, $packet->requestId, $packet->template, $packet->count);
+                                            } else if ($packet instanceof StopServerPacket) {
+                                                $this->handleStopServerPacket($address, $packet->requestId, $packet->server);
+                                            } else if ($packet instanceof StopServerGroupPacket) {
+                                                $this->handleStopServerGroupPacket($address, $packet->requestId, $packet->template);
+                                            } else if ($packet instanceof MessagePacket) {
+                                                $this->handleSendMessage($packet->message);
+                                            } else if ($packet instanceof ConsoleTextPacket) {
+                                                $this->logger->info("§f[§b{$packet->sender}§f] §f{$packet->message}");
+                                            }
+                                        }
                                     }
-                                    if ($packet instanceof StopServerPacket) {
-                                        $this->handleStopServerPacket($address, $packet->requestId, $packet->server);
-                                    }
-                                    if ($packet instanceof StopServerGroupPacket) {
-                                        $this->handleStopServerGroupPacket($address, $packet->requestId, $packet->template);
-                                    }
-                                    if ($packet instanceof MessagePacket) {
-                                        $this->handleSendMessage($packet->message);
-                                    }
-								} else {
-									$this->cloud->getServer()->getLogger()->info("Got packet from unauthorized server. Ignoring...");
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-	}
+                                } else {
+                                    $this->cloud->getServer()->getLogger()->info("Got unknown packet. Ignoring...");
+                                }
+                            } else {
+                                $this->cloud->getServer()->getLogger()->info("Got packet from unauthorized server. Ignoring...");
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     public function getServerIdByAddress(InternetAddress $address): string {
         return array_search($address, $this->clients);
