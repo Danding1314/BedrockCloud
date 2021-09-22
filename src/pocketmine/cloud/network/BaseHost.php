@@ -7,6 +7,7 @@ use pocketmine\cloud\network\protocol\DataPacket;
 use pocketmine\cloud\network\protocol\DisconnectPacket;
 use pocketmine\cloud\network\protocol\ListServersPacket;
 use pocketmine\cloud\network\protocol\LoginPacket;
+use pocketmine\cloud\network\protocol\MessagePacket;
 use pocketmine\cloud\network\protocol\RequestPacket;
 use pocketmine\cloud\network\protocol\StartServerPacket;
 use pocketmine\cloud\network\protocol\StopServerGroupPacket;
@@ -15,24 +16,9 @@ use pocketmine\scheduler\ClosureTask;
 use raklib\server\UDPServerSocket;
 use raklib\utils\InternetAddress;
 
-
-/**
- * Class BaseHost
- * @package pocketmine\cloud\network
- * @author SkyZoneMC
- * @project CloudServer
- */
-class BaseHost{
-    private $cloud;
-    private $socket;
-    private $password;
-    private $address;
-    /** @var bool */
-    private $closed = false;
+class BaseHost extends PacketHandler {
     /** @var InternetAddress[] */
     public $clients = [];
-
-
 
 	/**
 	 * BaseHost constructor.
@@ -52,80 +38,6 @@ class BaseHost{
 
         $cloud->getScheduler()->scheduleRepeatingTask(new ClosureTask(function (int $currentTick): void {$this->onTick($currentTick);}), 1);
     }
-
-	/**
-	 * Function handleStartServerPacket
-	 * @param string $requestId
-	 * @param string $group
-	 * @param int $count
-	 * @param array $callbackData
-	 * @return void
-	 */
-	public function handleStartServerPacket(InternetAddress $address, string $requestId, string $group = "", int $count = 1): void{
-		$packet = new StartServerPacket();
-		$packet->type = RequestPacket::TYPE_RESPONSE;
-		$packet->requestId = $requestId;
-
-		if ($this->cloud->isTemplate($group)) {
-			$template = $this->cloud->getTemplateByName($group);
-			for ($i = 0; $i < $count; $i++) {
-				$server = $template->createNewServer();
-				if (!is_null($server)) {
-					$server->startServer();
-				} else {
-					$packet->status = RequestPacket::STATUS_ERROR;
-				}
-			}
-		} else {
-			$this->logger->warning("§cThis is not a Cloud-Group!");
-		}
-		$this->sendPacket($packet, $address);
-	}
-
-	/**
-	 * Function handleStartServerPacket
-	 * @param string $requestId
-	 * @param string $group
-	 * @param int $count
-	 * @param array $callbackData
-	 * @return void
-	 */
-	public function handleStopServerGroupPacket(InternetAddress $address, string $requestId, string $group = ""): void{
-		$packet = new StartServerPacket();
-		$packet->type = RequestPacket::TYPE_RESPONSE;
-		$packet->requestId = $requestId;
-
-		if ($this->cloud->isTemplate($group)) {
-			$template = $this->cloud->getTemplateByName($group);
-			$template->stopAllServers();
-			foreach ($template->getServers() as $server){
-				$template->unregisterServer($server);
-				$server->deleteServer();
-			}
-		} else {
-			$this->logger->warning("§cThis is not a Cloud-Group!");
-		}
-		$this->sendPacket($packet, $address);
-	}
-
-	/**
-	 * Function handleStopServerPacket
-	 * @param InternetAddress $address
-	 * @param string $requestId
-	 * @param string $server
-	 * @return void
-	 */
-	public function handleStopServerPacket(InternetAddress $address, string $requestId, string $server = ""): void{
-		$packet = new StopServerPacket();
-		$packet->type = RequestPacket::TYPE_RESPONSE;
-		$packet->requestId = $requestId;
-
-		if ($server instanceof CloudServer){
-			$server->stopServer();
-		}
-
-		$this->sendPacket($packet, $address);
-	}
 
     public function onTick(int $tick): void{
 		if (!$this->closed) {
@@ -157,6 +69,9 @@ class BaseHost{
 						if ($packet instanceof StopServerGroupPacket) {
 							$this->handleStopServerGroupPacket($address, $packet->requestId, $packet->template);
 						}
+                        if ($packet instanceof MessagePacket) {
+                            $this->handleSendMessage($packet->message);
+                        }
 						if ($packet instanceof RequestPacket && $packet->type == RequestPacket::TYPE_REQUEST) {
 							if ($packet instanceof LoginPacket) {
 								$this->logger->info("Received LoginPacket from {$address->getIp()}:{$address->getPort()}.");
@@ -250,14 +165,6 @@ class BaseHost{
         $pk = new DisconnectPacket();
         $pk->reason = $reason;
         $this->sendPacket($pk, $address);
-    }
-
-    public function sendPacket(DataPacket $packet, InternetAddress $address): bool {
-        if (!$this->closed) {
-            $packet->encode();
-            $this->socket->writePacket($packet->getBuffer(), $address->getIp(), $address->getPort());
-        }
-        return false;
     }
 
 	/**
