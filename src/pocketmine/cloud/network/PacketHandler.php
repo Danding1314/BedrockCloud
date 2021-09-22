@@ -4,7 +4,10 @@ namespace pocketmine\cloud\network;
 
 use pocketmine\cloud\Cloud;
 use pocketmine\cloud\CloudServer;
+use pocketmine\cloud\network\protocol\AcceptConnectionPacket;
 use pocketmine\cloud\network\protocol\DataPacket;
+use pocketmine\cloud\network\protocol\DisconnectPacket;
+use pocketmine\cloud\network\protocol\ListServersPacket;
 use pocketmine\cloud\network\protocol\RequestPacket;
 use pocketmine\cloud\network\protocol\SendMessagePacket;
 use pocketmine\cloud\network\protocol\StartServerPacket;
@@ -189,6 +192,70 @@ class PacketHandler{
         }
 
         $this->sendPacket($packet, $address);
+    }
+
+    public function getServerIdByAddress(InternetAddress $address): string {
+        return array_search($address, $this->clients);
+    }
+
+    public function listServers(InternetAddress $address, string $id, string $temp = ""){
+        $servers = [];
+        if($this->cloud->getTemplateByName($temp)){
+            $servers = array_merge($servers, $this->cloud->getTemplateByName($temp)->getServers());
+        }else{
+            $templates = $this->cloud->getTemplates();
+            foreach ($templates as $template){
+                $servers = array_merge($servers, $template->getServers());
+            }
+        }
+        $s = [];
+        foreach ($servers as $server){
+            $s[] = [
+                "id" => $server->getID(),
+                "template" => $server->getTemplate()->getName(),
+                "playercount" => $server->getPlayerCount(),
+                "maxplayers" => $server->getTemplate()->maxPlayerCount
+            ];
+        }
+
+        $pk = new ListServersPacket();
+        $pk->type = RequestPacket::TYPE_RESPONSE;
+        $pk->requestid = $id;
+        $pk->servers = $s;
+        $pk->template = $temp;
+        $this->sendPacket($pk, $address);
+    }
+
+    public function startServer(InternetAddress $address, string $id, int $count, string $temp = ""){
+        $pk = new StartServerPacket();
+        $pk->type = RequestPacket::TYPE_RESPONSE;
+        $pk->requestid = $id;
+        if($this->cloud->isTemplate($temp)){
+            $template = $this->cloud->getTemplateByName($temp);
+            for ($i = 0; $i < $count; $i++){
+                $server = $template->createNewServer();
+                $server->startServer();
+            }
+            $pk->status = 1;
+        }else{
+            $pk->status = 0;
+        }
+        $this->sendPacket($pk, $address);
+    }
+
+    public function disconnect(InternetAddress $address, int $reason) {
+        if (in_array($address, $this->clients)) {
+            $this->clients = array_diff($this->clients, [$address]);
+        }
+
+        $pk = new DisconnectPacket();
+        $pk->reason = $reason;
+        $this->sendPacket($pk, $address);
+    }
+
+    public function acceptConnection() {
+        $pk = new AcceptConnectionPacket();
+        $this->sendPacket($pk);
     }
 
 }

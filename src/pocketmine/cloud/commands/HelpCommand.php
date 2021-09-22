@@ -15,13 +15,20 @@ class HelpCommand extends VanillaCommand {
 		parent::__construct($name, "Stop cloud", "/end");
 	}
 
-	public function execute(CommandSender $sender, string $commandLabel, array $args) {
-		$sender->sendMessage(Options::PREFIX . "§cCommands§7: §r");
-		$sender->sendMessage(Options::PREFIX . "§7- §e/start <template> <count>");
-		$sender->sendMessage(Options::PREFIX . "§7- §e/list");
-		$sender->sendMessage(Options::PREFIX . "§7- §e/end");
-		$sender->sendMessage(Options::PREFIX . "§7- §e/stop <template/Servername>");
-		$sender->sendMessage(Options::PREFIX . "§7- §e/create <template>");
-		$sender->sendMessage(Options::PREFIX . "§7- §e/save <Servername>| §4(Unstable)");
-	}
+    public function execute(CommandSender $sender, string $commandLabel, array $args) {
+        $sender->sendMessage(Options::PREFIX . "§7-=- §bHelp Page §7-=-");
+
+        $descriptions = [];
+        $commands = $this->cloud->getServer()->getCommandMap()->getCommands();
+
+        foreach($commands as $name => $command) {
+            if (in_array($command->getDescription(), $descriptions)) continue;
+            $descriptions[] = $command->getDescription();
+            $sender->sendMessage(Options::PREFIX . "§7- §e{$command} §c| §r{$command->getDescription()}");
+        }
+        $counting = count($commands);
+        $result1 = $counting / 2;
+        $result = $result1 -1;
+        $sender->sendMessage($result . " Commands");
+    }
 }
