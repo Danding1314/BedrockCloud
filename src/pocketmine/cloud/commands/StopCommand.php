@@ -20,13 +20,11 @@ class StopCommand extends VanillaCommand {
         if(isset($args[0])){
             if ($args[0] == "all"){
 				$this->cloud->stopAll();
-                $this->cloud->stopAllP();
                 $this->cloud->getServer()->getLogger()->info(Options::PREFIX . "§cStopping all servers.");
             }elseif($this->cloud->isTemplate($args[0])){
                 $this->cloud->getServer()->getLogger()->info(Options::PREFIX . "§cStopping all servers with template ".$args[0]."!");
                 $template = $this->cloud->getTemplateByName($args[0]);
                 $template->stopAllServers();
-                $template->stopAllPServers();
             }elseif ($this->cloud->getServerByID($args[0])){
             	$server = $this->cloud->getServerByID($args[0]);
 				$server->stopServer();
