@@ -27,6 +27,7 @@ use pocketmine\event\server\LowMemoryEvent;
 use pocketmine\scheduler\DumpWorkerMemoryTask;
 use pocketmine\scheduler\GarbageCollectionTask;
 use pocketmine\utils\Utils;
+use raklib\server\RakLibServer;
 use function arsort;
 use function count;
 use function fclose;

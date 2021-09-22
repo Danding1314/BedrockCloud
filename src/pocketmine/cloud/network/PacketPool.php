@@ -7,6 +7,8 @@ use pocketmine\cloud\network\protocol\ConsoleTextPacket;
 use pocketmine\cloud\network\protocol\LoginPacket;
 use pocketmine\cloud\network\protocol\DataPacket;
 use pocketmine\cloud\network\protocol\DisconnectPacket;
+use pocketmine\cloud\network\protocol\MessagePacket;
+use pocketmine\cloud\network\protocol\SendMessagePacket;
 use pocketmine\cloud\network\protocol\StartServerPacket;
 use pocketmine\cloud\network\protocol\StopServerGroupPacket;
 use pocketmine\cloud\network\protocol\StopServerPacket;
@@ -26,6 +28,8 @@ class PacketPool{
 		static::registerPacket(new StartServerPacket());
 		static::registerPacket(new StopServerGroupPacket());
 		static::registerPacket(new StopServerPacket());
+        static::registerPacket(new SendMessagePacket());
+        static::registerPacket(new MessagePacket());
     }
 
     public static function registerPacket(DataPacket $packet) {

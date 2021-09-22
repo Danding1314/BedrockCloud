@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/Cloud.iml" filepath="$PROJECT_DIR$/.idea/Cloud.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../resources/vendor/vendor.iml" filepath="$PROJECT_DIR$/../resources/vendor/vendor.iml" />
     </modules>
   </component>
 </project>

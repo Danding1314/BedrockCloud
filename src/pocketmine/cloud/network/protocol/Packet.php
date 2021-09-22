@@ -27,4 +27,6 @@ class Packet extends DataPacket{
 	public const PACKET_START_SERVER      	  = 0x0000E;
 	public const PACKET_STOP_SERVER       	  = 0x0000F;
 	public const PACKET_STOP_GROUP       	  = 0x000A0;
+    public const PACKET_MESSAGE_ALL           = 0x000A1;
+    public const PACKET_MESSAGE               = 0x000A2;
 }
